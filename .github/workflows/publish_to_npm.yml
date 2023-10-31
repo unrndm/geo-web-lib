@@ -1,0 +1,27 @@
+name: Publish to npmjs
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install rustup
+        run: curl https://sh.rustup.rs -sSf | sh
+
+      - name: install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: login with wasm-pack
+        run: wasm-pack login
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: publish with wasm-pack
+        run: wasm-pack publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
