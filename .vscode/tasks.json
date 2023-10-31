@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "start wasm-pack watcher",
+            "type": "shell",
+            "command": "fswatch -o src --event Updated | xargs -I{} wasm-pack build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+            },
+        }
+    ]
+}
