@@ -10,33 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # - name: Install pnpm
-      #   uses: pnpm/action-setup@v2
-      #   with:
-      #     version: 8
-
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      # - name: Install rustup
-      # run: curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain none
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | bash
-
-      # - name: install rustup
-      # uses: dtolnay/rust-toolchain@stable
-      # with:
-      # targets: wasm32-unknown-unknown
-
-      #   run: |
-      #     curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain none
-      #     source "$HOME/.cargo/env"
-      #     curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      # - name: install wasm-pack
-      #   run: npm add -g wasm-pack
 
       - name: build & pack with wasm-pack
         run: |
@@ -46,8 +27,3 @@ jobs:
       - run: npm publish ./pkg --tag vars.GITHUB_REF
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # - name: login with wasm-pack
-      #   run: wasm-pack login
-      #   env:
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
