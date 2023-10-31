@@ -10,18 +10,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install rustup
-        run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+      # - name: Install pnpm
+      #   uses: pnpm/action-setup@v2
+      #   with:
+      #     version: 8
 
-      - name: install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-      - name: login with wasm-pack
-        run: wasm-pack login
+      # - name: Install rustup
+      # run: curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain none
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | bash
+
+      # - name: install rustup
+      # uses: dtolnay/rust-toolchain@stable
+      # with:
+      # targets: wasm32-unknown-unknown
+
+      #   run: |
+      #     curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain none
+      #     source "$HOME/.cargo/env"
+      #     curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      # - name: install wasm-pack
+      #   run: npm add -g wasm-pack
+
+      - name: build & pack with wasm-pack
+        run: |
+          wasm-pack build
+          wasm-pack pack
+
+      - run: npm publish ./pkg --tag vars.GITHUB_REF
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: publish with wasm-pack
-        run: wasm-pack publish
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: login with wasm-pack
+      #   run: wasm-pack login
+      #   env:
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
