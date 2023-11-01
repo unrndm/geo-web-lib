@@ -69,10 +69,10 @@ pub trait IDiffer {
 }
 
 pub struct Differ {
-    differs: HashMap<String, Box<dyn IDiffer>>,
+    differs: HashMap<&'static str, Box<dyn IDiffer>>,
 }
 
-fn inner_type_name<T>(geometry: Geometry<T>) -> String
+fn inner_type_name<T>(geometry: Geometry<T>) -> &'static str
 where
     T: CoordNum,
 {
@@ -113,15 +113,15 @@ impl Differ {
         match (old_geometry, new_geometry) {
             (None, None) => Ok(None),
             (old, new) => {
-                if (!Differ::geometries_equal(old, new)) {
+                if (old.is_some() || new.is_some() || old != new) {
                     Err(format!("Mismatched types: {:#?} & {:#?}", old, new).to_string())
                 } else {
                     let geom_type = if (old.is_some()) {
-                        inner_type_name(old.unwrap())
+                        inner_type_name(old.clone().unwrap())
                     } else if (new.is_some()) {
-                        inner_type_name(new.unwrap())
+                        inner_type_name(new.clone().unwrap())
                     } else {
-                        "none".to_string()
+                        "none"
                     };
 
                     if (!self.differs.contains_key(&geom_type)) {
@@ -129,8 +129,8 @@ impl Differ {
                     } else {
                         let differ = self.differs.get(&geom_type).unwrap();
                         Ok(Some(differ.create_diff(Change::new(
-                            old,
-                            new,
+                            old.clone(),
+                            new.clone(),
                             Differ::get_operation(old, new),
                             0,
                         ))))
@@ -162,8 +162,10 @@ pub trait IDiff {
 
     fn index(&self) -> i32;
     fn set_index(&mut self, index: i32);
+
     fn operation(&self) -> Operation;
     fn set_operation(&mut self, operation: Operation);
+
     fn geometry_type(&self) -> &str;
     fn reverse(&self, index: Option<i32>) -> dyn IDiff;
 }
