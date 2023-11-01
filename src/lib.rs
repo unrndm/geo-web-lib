@@ -1,10 +1,11 @@
 // mod geomdiff;
+mod rasterize;
 mod utils;
 
-// use geomdiff::GeomDiff;
-use std::collections::HashMap;
+use rasterize::Rasterize;
+// use std::collections::HashMap;
 
-use geo::algorithm::BooleanOps;
+// use geo::algorithm::BooleanOps;
 use geo_types::{Geometry, LineString};
 use wasm_bindgen::prelude::*;
 use wkt::{ToWkt, TryFromWkt};
@@ -42,24 +43,14 @@ impl Calculator {
         utils::set_panic_hook();
 
         Calculator {
-            // data: HashMap::new(),
+        //     data: HashMap::new(),
         }
     }
 
-    pub fn rasterize(&self, simple_line_wkt: &str) -> Result<String, Box<[i64]>> {
+    pub fn rasterize(&self, simple_line_wkt: &str) -> Box<[u8]> {
+        console_log!("{:#?}", simple_line_wkt);
         let line: LineString<i64> = LineString::try_from_wkt_str(simple_line_wkt).unwrap_throw();
-
-        if line.0.len() != 2 {
-            Err("only works on string with 2 points".to_string())
-        }
-
-        let p0 = line.0.get(0).unwrap_throw();
-        let p1 = line.0.get(1).unwrap_throw();
-
-        let dx = p0.x - p1.x;
-        let dy = p0.y - p1.y;
-
-        (vec![]).into()
+        line.rasterize()
     }
 
     // pub fn add_variable_from_wkt(&mut self, name: String, wkt: String) {
