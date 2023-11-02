@@ -1,6 +1,6 @@
 [package]
 name = "geo-web-lib"
-version = "0.2.0"
+version = "1.0.0"
 authors = ["unrndm <unrndm@gmail.com>"]
 edition = "2018"
 

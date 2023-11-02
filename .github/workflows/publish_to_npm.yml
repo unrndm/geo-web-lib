@@ -1,29 +1,30 @@
 name: Publish to npmjs
 
 on:
-  release:
-    types: [published]
+    release:
+        types: [published]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          registry-url: "https://registry.npmjs.org"
+            - name: Install Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 18
+                  registry-url: "https://registry.npmjs.org"
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | bash
+            - name: Install wasm-pack
+              run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | bash
 
-      - name: build & pack with wasm-pack
-        run: |
-          wasm-pack build
-          wasm-pack pack
+            - name: build & pack with wasm-pack
+              run: |
+                  wasm-pack build
+                  wasm-pack pack
 
-      - run: npm publish ./pkg --tag vars.GITHUB_REF
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+            # - run: npm publish ./pkg --tag ${vars.GITHUB_REF}
+            - run: npm publish ./pkg
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
