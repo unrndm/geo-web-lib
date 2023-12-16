@@ -1,17 +1,13 @@
-use super::log;
-
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
+use super::console_log;
 
 use geo_types::{Coord, Line, LineString};
 
 pub trait Rasterize: Sized {
-    fn rasterize(&self) -> Box<[i32]>;
+    fn rasterize_line(&self) -> Box<[i32]>;
 }
 
 impl Rasterize for LineString<i32> {
-    fn rasterize(&self) -> Box<[i32]> {
+    fn rasterize_line(&self) -> Box<[i32]> {
         console_log!("self: {:#?}", self);
 
         let min_x = self.into_iter().map(|coord| coord.x).min().unwrap();
@@ -32,7 +28,7 @@ impl Rasterize for LineString<i32> {
         let mut res = vec![0; (width * height) as usize];
 
         for line in self_with_offset.lines() {
-            console_log!("line: {:#?}", line);
+            // console_log!("line: {:#?}", line);
 
             // correct_line with correct slope
             // maybe use `.slope`?
@@ -52,7 +48,7 @@ impl Rasterize for LineString<i32> {
                     }
                 };
 
-            console_log!("correct line: {:#?}", corrected_line);
+            // console_log!("correct line: {:#?}", corrected_line);
 
             let (xi, dx) = if corrected_line.dx() < 0 {
                 (-1, -corrected_line.dx())
