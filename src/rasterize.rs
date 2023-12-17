@@ -1,83 +1,74 @@
-use super::console_log;
+use crate::line::rasterize_line;
+use crate::polygon::rasterize_polygon;
 
-use geo_types::{Coord, Line, LineString};
+use crate::Rasterizer;
+use geo::{
+    Geometry, GeometryCollection, LineString, MultiLineString, MultiPoint, MultiPolygon, Point,
+    Polygon,
+};
 
-pub trait Rasterize: Sized {
-    fn rasterize_line(&self) -> Box<[i32]>;
+pub trait Rasterize<T> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer);
 }
 
-impl Rasterize for LineString<i32> {
-    fn rasterize_line(&self) -> Box<[i32]> {
-        console_log!("self: {:#?}", self);
+impl Rasterize<f64> for Point<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        let x = self.x().floor() as usize;
+        let y = self.y().floor() as usize;
+        rasterizer.fill_pixel(x, y);
+    }
+}
 
-        let min_x = self.into_iter().map(|coord| coord.x).min().unwrap();
-        let max_x = self.into_iter().map(|coord| coord.x).max().unwrap();
-        let min_y = self.into_iter().map(|coord| coord.y).min().unwrap();
-        let max_y = self.into_iter().map(|coord| coord.y).max().unwrap();
+impl Rasterize<f64> for MultiPoint<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        self.iter().for_each(|point| point.rasterize(rasterizer));
+    }
+}
 
-        let offset: Coord<i32> = (min_x, min_y).into();
+impl Rasterize<f64> for LineString<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        self.lines().for_each(|line| {
+            rasterize_line(&line, rasterizer);
+        });
+    }
+}
 
-        let width = max_x - min_x;
-        let height = max_y - min_y;
+impl Rasterize<f64> for MultiLineString<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        self.iter()
+            .for_each(|line_string| line_string.rasterize(rasterizer));
+    }
+}
 
-        let self_with_offset: LineString<i32> =
-            self.0.iter().map(|coord| *coord - offset).collect();
+impl Rasterize<f64> for Polygon<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        rasterize_polygon(self.exterior(), self.interiors(), rasterizer);
+    }
+}
 
-        console_log!("self with offset: {:#?}", self_with_offset);
+impl Rasterize<f64> for MultiPolygon<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        self.iter().for_each(|poly| poly.rasterize(rasterizer));
+    }
+}
 
-        let mut res = vec![0; (width * height) as usize];
-
-        for line in self_with_offset.lines() {
-            // console_log!("line: {:#?}", line);
-
-            // correct_line with correct slope
-            // maybe use `.slope`?
-            let corrected_line =
-                if (line.end.y - line.start.y).abs() < (line.end.x - line.start.x).abs() {
-                    if line.start.x > line.start.x {
-                        Line::new(line.end, line.start)
-                        // line
-                    } else {
-                        line
-                    }
-                } else {
-                    if line.start.y > line.end.y {
-                        Line::new(line.end, line.start)
-                    } else {
-                        line
-                    }
-                };
-
-            // console_log!("correct line: {:#?}", corrected_line);
-
-            let (xi, dx) = if corrected_line.dx() < 0 {
-                (-1, -corrected_line.dx())
-            } else {
-                (1, corrected_line.dx())
-            };
-            let mut D = (2 * dx) - corrected_line.dy();
-
-            let mut x = corrected_line.start.x;
-
-            for y in corrected_line.start.y..corrected_line.end.y {
-                res[(width * x + y) as usize] = 255;
-                D = if D > 0 {
-                    x += xi;
-                    D + (2 * (dx - corrected_line.dy()))
-                } else {
-                    D + 2 * dx
-                }
-            }
+impl Rasterize<f64> for Geometry<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        match self {
+            Geometry::Point(point) => point.rasterize(rasterizer),
+            Geometry::MultiPoint(points) => points.rasterize(rasterizer),
+            Geometry::LineString(line) => line.rasterize(rasterizer),
+            Geometry::MultiLineString(lines) => lines.rasterize(rasterizer),
+            Geometry::Polygon(polygon) => polygon.rasterize(rasterizer),
+            Geometry::MultiPolygon(polygonons) => polygonons.rasterize(rasterizer),
+            Geometry::GeometryCollection(geoms) => geoms.rasterize(rasterizer),
+            _ => unreachable!("This geometry type is not supported"),
         }
+    }
+}
 
-        res = res
-            .iter()
-            .map(|val| [*val, *val, *val, *val])
-            .flatten()
-            .collect::<Vec<_>>();
-
-        res.insert(0, (max_x - min_x) as i32);
-        res.insert(0, (max_y - min_y) as i32);
-        res.into_boxed_slice()
+impl Rasterize<f64> for GeometryCollection<f64> {
+    fn rasterize(&self, rasterizer: &mut Rasterizer) {
+        self.iter().for_each(|geom| geom.rasterize(rasterizer));
     }
 }
